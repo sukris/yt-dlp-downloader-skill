@@ -24,7 +24,10 @@ metadata:
 - 默认不下载播放列表；只有用户明确要求合集、playlist 或批量下载时才启用播放列表。
 - 默认不读取浏览器 cookies；只有用户明确授权，或 YouTube 等站点出现 403/需要登录时，才使用 `--cookies-browser`。
 - 默认不安装依赖；缺少 `yt-dlp` 或 `ffmpeg` 时，说明需要用户安装。
-- 不手写复杂 shell 命令拼接；优先使用本技能脚本，避免命令注入和参数转义错误。
+- 不手写复杂 shell 命令拼接；必须优先使用本技能脚本，避免命令注入和参数转义错误。
+- 在 OpenCode 中不要优先直接运行裸 `yt-dlp`；除非技能脚本不存在或用户明确要求裸命令，否则一律调用 `~/.config/opencode/skills/yt-dlp-downloader/scripts/ytdlp_download.sh`。
+- 在 Claude Code 或其他 Agent Skills 兼容客户端中，优先调用 `${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh`。
+- 抖音 `user/self?...modal_id=...` 链接可直接传给脚本，脚本会自动归一化为 `https://www.douyin.com/video/<modal_id>`。
 
 ## 脚本位置
 
@@ -40,6 +43,8 @@ OpenCode 本地技能库安装后也可使用 home 相对路径：
 ~/.config/opencode/skills/yt-dlp-downloader/scripts/ytdlp_download.sh
 ```
 
+如果需要在 OpenCode 中执行，优先使用上面的 OpenCode 路径，不要先改写成裸 `yt-dlp` 命令。
+
 ## 快速命令
 
 下载单个视频：
@@ -52,6 +57,12 @@ ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh "VIDEO_URL"
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh "https://www.tiktok.com/@user/video/1234567890"
+```
+
+OpenCode 中下载抖音视频：
+
+```bash
+~/.config/opencode/skills/yt-dlp-downloader/scripts/ytdlp_download.sh "https://www.douyin.com/user/self?modal_id=7639305281563254986"
 ```
 
 提取 MP3：

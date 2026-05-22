@@ -51,6 +51,19 @@ validate_url() {
   [[ "$url" =~ ^https?:// ]] || fail "只支持 http/https URL: $url"
 }
 
+normalize_url() {
+  local url="$1"
+  local modal_id
+
+  if [[ "$url" =~ ^https?://(www\.)?douyin\.com/user/self\? ]] && [[ "$url" =~ (^|[?&])modal_id=([0-9]+) ]]; then
+    modal_id="${BASH_REMATCH[2]}"
+    printf 'https://www.douyin.com/video/%s\n' "$modal_id"
+    return
+  fi
+
+  printf '%s\n' "$url"
+}
+
 validate_quality() {
   local quality="$1"
   [[ "$quality" =~ ^[0-9]+$ ]] || fail "--quality 必须是数字，如 720 或 1080"
@@ -187,7 +200,7 @@ while [[ $# -gt 0 ]]; do
       shift
       while [[ $# -gt 0 ]]; do
         validate_url "$1"
-        urls+=("$1")
+        urls+=("$(normalize_url "$1")")
         shift
       done
       ;;
@@ -196,7 +209,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       validate_url "$1"
-      urls+=("$1")
+      urls+=("$(normalize_url "$1")")
       shift
       ;;
   esac

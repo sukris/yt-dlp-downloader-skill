@@ -59,6 +59,12 @@ scripts/ytdlp_download.sh "VIDEO_URL"
 scripts/ytdlp_download.sh "https://www.tiktok.com/@user/video/1234567890"
 ```
 
+下载抖音 `modal_id` 分享页，脚本会自动归一化为标准视频页：
+
+```bash
+scripts/ytdlp_download.sh "https://www.douyin.com/user/self?modal_id=7639305281563254986"
+```
+
 提取 MP3：
 
 ```bash
@@ -86,6 +92,7 @@ scripts/ytdlp_download.sh --dry-run "VIDEO_URL"
 ## 安全设计
 
 - 脚本使用 bash 数组执行命令，不使用 `eval`。
+- OpenCode 中优先调用 `~/.config/opencode/skills/yt-dlp-downloader/scripts/ytdlp_download.sh`，不要优先裸跑 `yt-dlp`。
 - URL 只接受 `http://` 和 `https://`。
 - 默认添加 `--no-playlist`，避免误下载整个播放列表。
 - 浏览器 cookies 只在显式传入 `--cookies-browser` 时使用。

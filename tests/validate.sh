@@ -33,12 +33,15 @@ grep -q 'TikTok' "$skill_file" || fail "SKILL.md missing TikTok keyword"
 grep -q '抖音' "$skill_file" || fail "SKILL.md missing Douyin keyword"
 grep -q '默认不读取浏览器 cookies' "$skill_file" || fail "SKILL.md missing cookie safety rule"
 grep -q '\${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh' "$skill_file" || fail "SKILL.md should reference CLAUDE_SKILL_DIR"
+grep -q '~/.config/opencode/skills/yt-dlp-downloader/scripts/ytdlp_download.sh' "$skill_file" || fail "SKILL.md should reference OpenCode script path"
+grep -q '不要优先直接运行裸 `yt-dlp`' "$skill_file" || fail "SKILL.md should forbid preferring bare yt-dlp"
 
 grep -q 'eval ' "$script_file" && fail "script must not use eval"
 grep -q 'cmd=(' "$script_file" || fail "script must build command with arrays"
 grep -q 'validate_url' "$script_file" || fail "script missing URL validation"
 grep -q 'validate_browser' "$script_file" || fail "script missing browser validation"
 grep -q 'validate_quality' "$script_file" || fail "script missing quality validation"
+grep -q 'normalize_url' "$script_file" || fail "script missing URL normalization"
 
 bash -n "$script_file"
 
@@ -47,6 +50,9 @@ printf '%s' "$help_output" | grep -q 'yt-dlp 安全下载封装' || fail "help o
 
 dry_run_output="$($script_file --dry-run "https://www.tiktok.com/@example/video/1234567890123456789")"
 printf '%s' "$dry_run_output" | grep -F -q -- '--no-playlist' || fail "dry-run should include --no-playlist by default"
+
+douyin_modal_output="$($script_file --dry-run "https://www.douyin.com/user/self?from_tab_name=main&modal_id=7639305281563254986&showSubTab=video&showTab=record")"
+printf '%s' "$douyin_modal_output" | grep -F -q 'https://www.douyin.com/video/7639305281563254986' || fail "Douyin modal_id URL should normalize to video URL"
 
 playlist_output="$($script_file --dry-run --playlist "https://www.tiktok.com/@example/video/1234567890123456789")"
 if printf '%s' "$playlist_output" | grep -F -q -- '--no-playlist'; then
