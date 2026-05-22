@@ -110,7 +110,7 @@ ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --cookies-browser chrome "VIDEO_UR
 | `--list-formats` | 只列出可用格式，不下载 |
 | `--thumbnail` | 下载缩略图 |
 | `--metadata` | 写出 info JSON |
-| `--cookies-browser NAME` | 使用浏览器 cookies：`chrome`、`firefox`、`safari` 等 |
+| `--cookies-browser SPEC` | 使用浏览器 cookies：`chrome`、`firefox`、`safari` 等；可带 profile，如 `chrome:Default` |
 | `--playlist` | 允许下载播放列表 |
 | `--playlist-range RANGE` | 下载播放列表范围，如 `1:5` |
 | `--proxy URL` | 使用代理 |
@@ -120,7 +120,7 @@ ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --cookies-browser chrome "VIDEO_UR
 
 | 平台 | 默认策略 |
 |------|----------|
-| TikTok/抖音 | 直接下载，不默认 cookies |
+| TikTok/抖音 | 先直接下载；抖音提示需要 `fresh cookies` 时，再询问是否允许读取浏览器 cookies |
 | YouTube | 先直接下载；403、私有或年龄限制时再请求用户授权 cookies |
 | Bilibili | 先直接下载；需要登录时再让用户决定是否提供 cookies |
 | Twitter/X | 先直接下载；失败时提示登录态或站点限制 |
@@ -129,6 +129,7 @@ ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --cookies-browser chrome "VIDEO_UR
 
 - `yt-dlp: command not found`：提示安装 `yt-dlp`，例如 `python3 -m pip install -U yt-dlp`。
 - `ffmpeg not found`：音频提取或合并失败时，提示安装 `ffmpeg`。
+- 抖音 `fresh cookies`：不能自动读取 cookies；先说明需要用户授权，再使用 `--cookies-browser` 重试。若默认浏览器 profile 无效，可让用户指定实际打开抖音的 profile，如 `--cookies-browser chrome:Default`。
 - `HTTP 403 Forbidden`：先建议更新 `yt-dlp`，再询问是否允许读取浏览器 cookies。
 - 格式不可用：运行 `--list-formats`，再按用户选择的格式下载。
 - 网络或中断：重试同一命令，`yt-dlp` 会尽量断点续传。

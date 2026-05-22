@@ -20,7 +20,7 @@ yt-dlp 安全下载封装
   -l, --list-formats         只列出可用格式，不下载
       --thumbnail            下载缩略图
       --metadata             写出 info JSON
-      --cookies-browser NAME 使用浏览器 cookies：chrome/firefox/safari/edge/brave/opera
+      --cookies-browser SPEC 使用浏览器 cookies：chrome/firefox/safari/edge/brave/opera，可带 :PROFILE
       --playlist             允许下载播放列表
       --playlist-range RANGE 下载播放列表范围，如 1:5；会自动允许播放列表
       --proxy URL            使用代理，支持 http/https/socks4/socks5/socks5h
@@ -78,9 +78,12 @@ validate_audio_format() {
 }
 
 validate_browser() {
-  case "$1" in
+  local browser_spec="$1"
+  local browser_name="${browser_spec%%[:+]*}"
+
+  case "$browser_name" in
     chrome|firefox|safari|edge|brave|opera) ;;
-    *) fail "不支持的浏览器: $1。可用值: chrome, firefox, safari, edge, brave, opera" ;;
+    *) fail "不支持的浏览器: $1。可用值: chrome, firefox, safari, edge, brave, opera，可选格式: chrome:Default" ;;
   esac
 }
 

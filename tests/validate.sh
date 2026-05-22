@@ -32,9 +32,11 @@ grep -q 'yt-dlp' "$skill_file" || fail "SKILL.md missing yt-dlp keyword"
 grep -q 'TikTok' "$skill_file" || fail "SKILL.md missing TikTok keyword"
 grep -q '抖音' "$skill_file" || fail "SKILL.md missing Douyin keyword"
 grep -q '默认不读取浏览器 cookies' "$skill_file" || fail "SKILL.md missing cookie safety rule"
+grep -q 'fresh cookies' "$skill_file" || fail "SKILL.md should mention fresh cookies failures"
 grep -q '\${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh' "$skill_file" || fail "SKILL.md should reference CLAUDE_SKILL_DIR"
 grep -q '~/.config/opencode/skills/yt-dlp-downloader/scripts/ytdlp_download.sh' "$skill_file" || fail "SKILL.md should reference OpenCode script path"
 grep -q '不要优先直接运行裸 `yt-dlp`' "$skill_file" || fail "SKILL.md should forbid preferring bare yt-dlp"
+grep -q 'fresh cookies' "$readme_file" || fail "README.md should mention fresh cookies failures"
 
 grep -q 'eval ' "$script_file" && fail "script must not use eval"
 grep -q 'cmd=(' "$script_file" || fail "script must build command with arrays"
@@ -64,6 +66,9 @@ printf '%s' "$quality_output" | grep -F -q 'height\<=720' || fail "quality dry-r
 
 audio_output="$($script_file --dry-run --audio "https://example.com/video")"
 printf '%s' "$audio_output" | grep -F -q -- '--audio-format mp3' || fail "audio dry-run should include mp3 extraction"
+
+cookie_profile_output="$($script_file --dry-run --cookies-browser chrome:Default "https://example.com/video")"
+printf '%s' "$cookie_profile_output" | grep -F -q -- '--cookies-from-browser chrome:Default' || fail "cookies browser should allow explicit profile"
 
 assert_fails_with '不支持的浏览器' "$script_file" --dry-run --cookies-browser netscape "https://example.com/video"
 assert_fails_with '只支持 http/https URL' "$script_file" --dry-run "file:///tmp/video.mp4"

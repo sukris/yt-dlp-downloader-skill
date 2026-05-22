@@ -97,6 +97,7 @@ scripts/ytdlp_download.sh --dry-run "VIDEO_URL"
 - 默认添加 `--no-playlist`，避免误下载整个播放列表。
 - 浏览器 cookies 只在显式传入 `--cookies-browser` 时使用。
 - 支持的 cookies 浏览器为 `chrome`、`firefox`、`safari`、`edge`、`brave`、`opera`。
+- 抖音返回需要 `fresh cookies` 时，仍需先获得用户授权，再用 `--cookies-browser` 重试；如默认 profile 无效，可指定实际使用的 profile，例如 `--cookies-browser chrome:Default`。
 - 不绕过付费墙、访问控制、隐私设置或法律限制。
 
 ## 验证
