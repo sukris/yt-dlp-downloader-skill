@@ -29,6 +29,15 @@ metadata:
 - 在 Claude Code 或其他 Agent Skills 兼容客户端中，优先调用 `${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh`。
 - 抖音 `user/self?...modal_id=...` 链接可直接传给脚本，脚本会自动归一化为 `https://www.douyin.com/video/<modal_id>`。
 
+## 默认产品策略
+
+- 用户只说下载视频时，默认使用 `--preset compatible`：目标是单个 MP4 兼容文件，优先 H.264 视频和 AAC/M4A 音频，最高 1080p。
+- 用户明确要求最高画质、收藏或归档时，使用 `--preset best`；这可能输出 WebM/MKV/AV1/VP9，兼容性不如 MP4。
+- 用户要求手机、微信、QuickTime 可播放时，使用 `--preset mobile`，目标是 720p MP4 兼容文件。
+- 用户要求快速测试、小文件或省流量时，使用 `--preset small`。
+- 专家用户明确指定格式时，使用 `--format`；它优先级高于所有 preset。
+- 下载后验证默认开启，脚本会用 `ffprobe` 检查媒体流、容器、编码和时长；需要跳过时才用 `--no-verify`。
+
 ## 脚本位置
 
 兼容 Claude Code / Agent Skills 的相对脚本路径：
@@ -51,6 +60,24 @@ OpenCode 本地技能库安装后也可使用 home 相对路径：
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh "VIDEO_URL"
+```
+
+最高质量：
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --preset best "VIDEO_URL"
+```
+
+手机/微信友好：
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --preset mobile "VIDEO_URL"
+```
+
+快速小文件测试：
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --preset small "VIDEO_URL"
 ```
 
 下载 TikTok/抖音视频：
@@ -105,6 +132,7 @@ ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --cookies-browser chrome "VIDEO_UR
 | `--subs` | 下载人工字幕 |
 | `--auto-subs` | 下载自动字幕 |
 | `--sub-langs LANGS` | 指定字幕语言，如 `zh-Hans,en` |
+| `--preset PRESET` | 质量预设：`compatible`、`best`、`mobile`、`small`、`raw` |
 | `--quality HEIGHT` | 限制最高画质，如 `720`、`1080` |
 | `--format FORMAT` | 指定 yt-dlp 格式选择器或格式 ID |
 | `--list-formats` | 只列出可用格式，不下载 |
@@ -114,24 +142,32 @@ ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --cookies-browser chrome "VIDEO_UR
 | `--playlist` | 允许下载播放列表 |
 | `--playlist-range RANGE` | 下载播放列表范围，如 `1:5` |
 | `--proxy URL` | 使用代理 |
+| `--verify` | 下载后用 `ffprobe` 验证媒体，默认开启 |
+| `--no-verify` | 跳过下载后验证 |
 | `--dry-run` | 打印命令但不执行 |
 
-## 平台建议
+## 平台策略
 
 | 平台 | 默认策略 |
 |------|----------|
-| TikTok/抖音 | 先直接下载；抖音提示需要 `fresh cookies` 时，再询问是否允许读取浏览器 cookies |
-| YouTube | 先直接下载；403、私有或年龄限制时再请求用户授权 cookies |
-| Bilibili | 先直接下载；需要登录时再让用户决定是否提供 cookies |
-| Twitter/X | 先直接下载；失败时提示登录态或站点限制 |
+| YouTube | 默认 `compatible`；最高画质用 `best`；若出现 JS runtime 警告，说明后续可能需要安装运行时 |
+| TikTok | 用户未显式选择 preset 时走平台原格式，不强制高度筛选，避免格式不可用 |
+| Vimeo | 默认 `compatible`，下载后验证 HLS 合并结果 |
+| Bilibili | 公开视频可下；高清或会员内容需要用户授权 cookies |
+| Twitter/X | 公开视频可下；登录、年龄限制或删除内容要给出明确原因 |
+| Twitch Clip | 默认支持 clip；直播和 VOD 需要用户明确要求 |
+| Archive.org | 集合页先 `--list-formats` 或要求用户确认 playlist，不默认批量下载 |
+| 抖音 | 当前不纳入可靠下载承诺；官方 `yt-dlp` 常因 `a_bogus` 签名缺失报 `fresh cookies` |
 
 ## 错误处理
 
 - `yt-dlp: command not found`：提示安装 `yt-dlp`，例如 `python3 -m pip install -U yt-dlp`。
 - `ffmpeg not found`：音频提取或合并失败时，提示安装 `ffmpeg`。
-- 抖音 `fresh cookies`：不能自动读取 cookies；先说明需要用户授权，再使用 `--cookies-browser` 重试。若默认浏览器 profile 无效，可让用户指定实际打开抖音的 profile，如 `--cookies-browser chrome:Default`。
+- 抖音 `fresh cookies`：不能自动读取 cookies；先说明需要用户授权，再使用 `--cookies-browser` 重试。若默认浏览器 profile 无效，可让用户指定实际打开抖音的 profile，如 `--cookies-browser chrome:Default`。如果日志显示已成功提取 cookies 但仍失败，不要继续猜测参数；说明这是 `yt-dlp` 上游抖音接口签名问题，社区分析指向每次请求生成的 `a_bogus`，等待上游修复或让用户在浏览器开发者工具中手动保存有权访问的媒体文件。
 - `HTTP 403 Forbidden`：先建议更新 `yt-dlp`，再询问是否允许读取浏览器 cookies。
 - 格式不可用：运行 `--list-formats`，再按用户选择的格式下载。
+- 播放器打不开：优先改用默认 `compatible` 或 `mobile`，避免默认产出 MKV/Opus 等兼容性较差的组合。
+- Archive.org 集合页：不要默认批量下载；先 `--list-formats` 或让用户明确传 `--playlist`/`--playlist-range`。
 - 网络或中断：重试同一命令，`yt-dlp` 会尽量断点续传。
 
 ## 安全红线
@@ -141,3 +177,4 @@ ${CLAUDE_SKILL_DIR}/scripts/ytdlp_download.sh --cookies-browser chrome "VIDEO_UR
 - 不自动读取浏览器 cookies。
 - 不自动安装系统依赖或执行 `sudo`。
 - 不绕过付费墙、访问控制、隐私设置或法律限制。
+- 不直接照搬第三方抖音 `a_bogus` / 签名实现到本技能；上游已有相关 PR 因来源和许可证问题被拒绝。
